@@ -1,0 +1,39 @@
+# setup-app di webserver
+
+---
+  - hosts: webservers
+    become: true
+
+    vars:
+      path: "/var/www/html"  
+
+    tasks: 
+      - name: Upload app file, index page buat web
+        copy:
+          src: ../index.php
+          dest: "{{ path }}"
+          mode: 0755
+
+      - name: Buat info page sederhana
+        copy:
+          dest: "{{ path }}/info.php"
+          content: "<h1> Tes untuk menampilkan informasi tentang webserver yang sedang digunakan {{ ansible_hostname }} </h1>"  
+          
+      - name: Ngintip isi direktori
+        command: ls -la {{ path }}
+        register: hasil
+      
+      - name: Debug hasil tadi
+        debug:
+          msg: "{{ hasil }}"
+
+      - name: configure php.ini file
+        lineinfile:
+          path: /etc/php.ini
+          regexp: ^short_open_tag
+          line: 'short_open_tag=On'
+        notify: restart apache
+
+    handlers:  
+      - name: restart apache
+        service: name=httpd state=restarted
